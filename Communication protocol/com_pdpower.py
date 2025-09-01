@@ -42,7 +42,6 @@ class Command(IntEnum):
             Command.CMD_SYSTEM_SERIAL_NUM: 0,
         }.get(self, 0)
 
-
 class Com_PdPower:
     def __init__(self, port, baudrate=115200, timeout=1, queue_maxsize=100):
         self.ser = serial.Serial(port, baudrate, timeout=timeout)
@@ -280,88 +279,6 @@ class Com_PdPower:
         self.send_command(s)
         if not self._write_ok_event.wait(timeout=1.0):  # 等待1秒超时
             print("等待响应超时 Timeout waiting for response")
-    
-    def factory_data_set(self,dis_voltage_offset,set_voltage_offset,dis_current_offset,set_current_offset,current_0a_offset,lcd_panel_type):
-        s = bytearray(58)
-        s[0] = Command.CMD_SYSTEM_FACTORY_DATA
-
-        s[1] = dis_voltage_offset[0] & 0xFF
-        s[2] = dis_voltage_offset[0] >> 8
-        s[3] = set_voltage_offset[0] & 0xFF
-        s[4] = set_voltage_offset[0] >> 8
-
-        s[5] = dis_voltage_offset[1] & 0xFF
-        s[6] = dis_voltage_offset[1] >> 8
-        s[7] = set_voltage_offset[1] & 0xFF
-        s[8] = set_voltage_offset[1] >> 8
-
-        s[9] = dis_voltage_offset[2] & 0xFF
-        s[10] = dis_voltage_offset[2] >> 8
-        s[11] = set_voltage_offset[2] & 0xFF
-        s[12] = set_voltage_offset[2] >> 8
-
-        s[13] = dis_voltage_offset[3] & 0xFF
-        s[14] = dis_voltage_offset[3] >> 8
-        s[15] = set_voltage_offset[3] & 0xFF
-        s[16] = set_voltage_offset[3] >> 8
-
-        s[17] = dis_voltage_offset[4] & 0xFF
-        s[18] = dis_voltage_offset[4] >> 8
-        s[19] = set_voltage_offset[4] & 0xFF
-        s[20] = set_voltage_offset[4] >> 8
-
-        s[21] = dis_voltage_offset[5] & 0xFF
-        s[22] = dis_voltage_offset[5] >> 8
-        s[23] = set_voltage_offset[5] & 0xFF
-        s[24] = set_voltage_offset[5] >> 8
-
-        s[25] = dis_current_offset[0] & 0xFF
-        s[26] = dis_current_offset[0] >> 8
-        s[27] = set_current_offset[0] & 0xFF
-        s[28] = set_current_offset[0] >> 8
-
-        s[29] = dis_current_offset[1] & 0xFF
-        s[30] = dis_current_offset[1] >> 8
-        s[31] = set_current_offset[1] & 0xFF
-        s[32] = set_current_offset[1] >> 8
-
-        s[33] = dis_current_offset[2] & 0xFF
-        s[34] = dis_current_offset[2] >> 8
-        s[35] = set_current_offset[2] & 0xFF
-        s[36] = set_current_offset[2] >> 8
-
-        s[37] = dis_current_offset[3] & 0xFF
-        s[38] = dis_current_offset[3] >> 8
-        s[39] = set_current_offset[3] & 0xFF
-        s[40] = set_current_offset[3] >> 8
-
-        s[41] = dis_current_offset[4] & 0xFF
-        s[42] = dis_current_offset[4] >> 8
-        s[43] = set_current_offset[4] & 0xFF
-        s[44] = set_current_offset[4] >> 8
-
-        s[45] = dis_current_offset[5] & 0xFF
-        s[46] = dis_current_offset[5] >> 8
-        s[47] = set_current_offset[5] & 0xFF
-        s[48] = set_current_offset[5] >> 8
-
-        s[49] = current_0a_offset[1] & 0xFF
-        s[50] = current_0a_offset[1] >> 8
-        s[51] = current_0a_offset[0] & 0xFF
-        s[52] = current_0a_offset[0] >> 8
-
-        s[53] = lcd_panel_type & 0xFF
-        s[54] = lcd_panel_type >> 8
-
-        s[55] = 0
-        s[56] = 0
-
-        s[57] = Command.CMD_END
-
-        self._write_ok_event.clear()
-        self.send_command(s)
-        if not self._write_ok_event.wait(timeout=1.0):  # 等待1秒超时
-            print("等待响应超时 Timeout waiting for response")
 
     def factory_data_get(self):
         s = bytearray(2)
@@ -464,7 +381,6 @@ if __name__ == "__main__":
     time.sleep(1)
     c.output_offset_enable(False)
 
-    c.factory_data_set([1001,3001,5001,10001,15001,19001],[1000,3000,5000,10000,15000,19000],[51,351,751,1501,2501,3001],[50,350,750,1500,2500,3000],[1,3],0)
     print(c.factory_data_get())
     print(c.output_display_get())
     c.factory_reset()
