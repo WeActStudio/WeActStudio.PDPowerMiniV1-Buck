@@ -12,9 +12,20 @@
 |Output Protection|Overcurrent Protection,Short-circuit Protection|
 > Note: The main output current of 2A can operate for a long time, while 3A current requires enhanced heat dissipation
 
-# Product Introduction
+## Product Introduction
 ![display](Images/en/2.png)
+### Setting Introduction
+1. `Brightness` – Brightness: Adjustable from 0–100%; 0–10% corresponds to ultra-low brightness.
+2. `Reverse Dis` – Reverse Display: 0 = Normal, 1 = 180° rotation. Setting takes effect after power cycle.
+3. `OCP Enable` – Over-Current Protection: 0 = Disabled, 1 = Enabled. Output shuts down after approximately 200 ms when current exceeds the set value.
+4. `OC Discharge` – Over-Current Discharge: 0 = Disabled, 1 = Enabled.
+5. `AUTO OUT` – Auto Output: 0 = Disabled, 1 = Enabled. Output automatically enables after power-on.
+6. `Filter.Win` – Output Filter Window: Adjustable from 1–200, default value 50.
+7. `Factory Reset` – Factory Reset: Set to 1 and exit the settings menu to restore factory defaults (calibration values will not be cleared).
+8. `Offset Enable` – Calibration Enable: 0 = Disabled, 1 = Enabled. Factory default is 1 (calibrated).
+### Test Data
 ![display](Images/en/3.png)
+### Computer Software Introduction
 ![display](Images/en/4.png)
 
 ```

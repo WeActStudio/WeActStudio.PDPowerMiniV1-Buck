@@ -1,5 +1,16 @@
 > After upgrading, please manually restore the factory settings to ensure the device can continue to operate abnormally.
 
+## Setting Introduction
+1. `Brightness` – Brightness: Adjustable from 0–100%; 0–10% corresponds to ultra-low brightness.
+2. `Reverse Dis` – Reverse Display: 0 = Normal, 1 = 180° rotation. Setting takes effect after power cycle.
+3. `OCP Enable` – Over-Current Protection: 0 = Disabled, 1 = Enabled. Output shuts down after approximately 200 ms when current exceeds the set value.
+4. `OC Discharge` – Over-Current Discharge: 0 = Disabled, 1 = Enabled.
+5. `AUTO OUT` – Auto Output: 0 = Disabled, 1 = Enabled. Output automatically enables after power-on.
+6. `Filter.Win` – Output Filter Window: Adjustable from 1–200, default value 50.
+7. `Factory Reset` – Factory Reset: Set to 1 and exit the settings menu to restore factory defaults (calibration values will not be cleared).
+8. `Offset Enable` – Calibration Enable: 0 = Disabled, 1 = Enabled. Factory default is 1 (calibrated).
+
+## Version History
 **V1.0.0.0**
 1. Initial version
 
