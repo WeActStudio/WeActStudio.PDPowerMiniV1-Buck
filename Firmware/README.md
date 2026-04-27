@@ -25,3 +25,7 @@
 **V1.0.0.3**
 1. Added configurable moving average filter window size for output voltage and current, allowing flexible adjustment of filtering effect.
 2. Fixed the PD power display issue where the power showed "PD65WW" when switching from 100W to 65W.
+
+**V1.0.0.4**
+1. Optimize PD protocol, support EPR AVS, with the maximum requested voltage up to 24V.
+2. Add serial number display on the boot screen.
