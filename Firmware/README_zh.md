@@ -29,3 +29,18 @@
 **V1.0.0.4**
 1. 优化PD协议，支持EPR AVS，最高申请电压为24V。
 2. 启动画面增加序列号显示。
+
+## Windows下怎样升级
+1. 解压WeActStudio_Upgrade_Tool.7z
+2. 运行WeActStudio_Upgrade_Tool.exe
+3. 使用数据线连接设备
+4. 选择fpk固件
+5. 打开串口
+6. 点击发送按钮，开始升级
+
+## Linux、macOS或Windows下怎样升级
+1. 解压WeActStudio_Upgrade_Tool_Python.zip
+2. 使用数据线连接设备
+3. 运行WeActStudio_Upgrade_Tool.py, 需要安装pyserial库  
+示例：python WeActStudio_Upgrade_Tool.py firmware.fpk
+4. 等待升级完成
