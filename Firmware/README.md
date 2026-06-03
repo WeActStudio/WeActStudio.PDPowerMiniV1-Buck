@@ -4,11 +4,17 @@
 1. `Brightness` – Brightness: Adjustable from 0–100%; 0–10% corresponds to ultra-low brightness.
 2. `Reverse Dis` – Reverse Display: 0 = Normal, 1 = 180° rotation. Setting takes effect after power cycle.
 3. `OCP Enable` – Over-Current Protection: 0 = Disabled, 1 = Enabled. Output shuts down after approximately 200 ms when current exceeds the set value.
-4. `OC Discharge` – Over-Current Discharge: 0 = Disabled, 1 = Enabled.
+4. `OC Discharge` – Over-Current Discharge: 0 = Disabled, 1 = Enabled. <small>(V1.0.0.2 and above)</small>
 5. `AUTO OUT` – Auto Output: 0 = Disabled, 1 = Enabled. Output automatically enables after power-on.
-6. `Filter.Win` – Output Filter Window: Adjustable from 1–200, default value 50.
-7. `Factory Reset` – Factory Reset: Set to 1 and exit the settings menu to restore factory defaults (calibration values will not be cleared).
-8. `Offset Enable` – Calibration Enable: 0 = Disabled, 1 = Enabled. Factory default is 1 (calibrated).
+6. `Filter.Win` – Output Filter Window: Adjustable from 1–200, default value 50. <small>(V1.0.0.3 and above)</small>
+7. `Output Comp` – Output Compensation: 0 = Disabled, 1 = Enabled. <small>(V1.0.0.5 and above)</small>
+8. `UART Mode` – UART Mode: 0 = Disabled, 1 = Enabled. Setting takes effect after power cycle. <small>(V1.0.0.5 and above)</small>
+9. `UART Baudrate` – UART Baudrate: 0-6, respectively corresponding to 9600, 19200, 38400, 57600, 115200, 230400, 460800. <small>(V1.0.0.5 and above)</small>
+10. `Factory Reset` – Factory Reset: Set to 1 and exit the settings menu to restore factory defaults (calibration values will not be cleared).
+11. `Offset Enable` – Calibration Enable: 0 = Disabled, 1 = Enabled. Factory default is 1 (calibrated).
+> UART pins are assigned to DP and DM of Type‑C connector:
+DP → TX, DM → RX, 3.3 V logic level.  
+`Note`: The external UART chip must feature reverse-current protection (e.g., CH340K) to prevent power backfeeding and PDPowerMiniV1 startup failure when the UART side is powered up first.
 
 ## Version History
 **V1.0.0.0**
@@ -29,6 +35,16 @@
 **V1.0.0.4**
 1. Optimize PD protocol, support EPR AVS, with the maximum requested voltage up to 24V.
 2. Add serial number display on the boot screen.
+
+**V1.0.0.5**
+1. Add output display error compensation function (Output Comp):  
+Voltage compensation range: ±0.02 V; Current compensation range: ±0.003 A.
+2. Add UART communication function (UART Mode + UART Baudrate):  
+`UART Mode`: 0 = Disable, 1 = Enable. Setting takes effect after power cycle.
+`UART Baudrate`: Values 0-6 correspond to 9600, 19200, 38400, 57600, 115200, 230400, 460800 respectively.  
+UART pins are assigned to DP and DM of Type‑C connector:
+DP → TX, DM → RX, 3.3 V logic level.  
+`Note`: The external UART chip must feature reverse-current protection (e.g., CH340K) to prevent power backfeeding and PDPowerMiniV1 startup failure when the UART side is powered up first.
 
 ## How to Upgrade, Windows
 1. Extract WeActStudio_Upgrade_Tool.7z
