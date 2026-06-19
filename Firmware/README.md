@@ -1,40 +1,27 @@
 > After upgrading, please manually restore the factory settings to ensure the device can continue to operate abnormally.
 
 ## Setting Introduction
-1. `Brightness` – Brightness: Adjustable from 0–100%; 0–10% corresponds to ultra-low brightness.
-2. `Reverse Dis` – Reverse Display: 0 = Normal, 1 = 180° rotation. Setting takes effect after power cycle.
-3. `OCP Enable` – Over-Current Protection: 0 = Disabled, 1 = Enabled. Output shuts down after approximately 200 ms when current exceeds the set value.
-4. `OC Discharge` – Over-Current Discharge: 0 = Disabled, 1 = Enabled. <small>(V1.0.0.2 and above)</small>
-5. `AUTO OUT` – Auto Output: 0 = Disabled, 1 = Enabled. Output automatically enables after power-on.
-6. `Filter.Win` – Output Filter Window: Adjustable from 1–200, default value 50. <small>(V1.0.0.3 and above)</small>
-7. `Output Comp` – Output Compensation: 0 = Disabled, 1 = Enabled. <small>(V1.0.0.5 and above)</small>
-8. `UART Mode` – UART Mode: 0 = Disabled, 1 = Enabled. Setting takes effect after power cycle. <small>(V1.0.0.5 and above)</small>
-9. `UART Baudrate` – UART Baudrate: 0-6, respectively corresponding to 9600, 19200, 38400, 57600, 115200, 230400, 460800. <small>(V1.0.0.5 and above)</small>
-10. `Factory Reset` – Factory Reset: Set to 1 and exit the settings menu to restore factory defaults (calibration values will not be cleared).
-11. `Offset Enable` – Calibration Enable: 0 = Disabled, 1 = Enabled. Factory default is 1 (calibrated).
+1. `PD Vset` – PD Protocol Request Voltage: Adjustable from 8–24 V, 0.1 V step. Setting takes effect only when output is disabled. <small>(V1.0.1.0 and above)</small>
+2. `Brightness` – Brightness: Adjustable from 0–100%; 0–10% corresponds to ultra-low brightness.
+3. `Reverse Dis` – Reverse Display: 0 = Normal, 1 = 180° rotation. Setting takes effect after power cycle.
+4. `OCP Enable` – Over-Current Protection: 0 = Disabled, 1 = Enabled. Output shuts down after approximately 200 ms when current exceeds the set value.
+5. `OC Discharge` – Over-Current Discharge: 0 = Disabled, 1 = Enabled. <small>(V1.0.0.2 and above)</small>
+6. `AUTO OUT` – Auto Output: 0 = Disabled, 1 = Enabled. Output automatically enables after power-on.
+7. `Filter.Win` – Output Filter Window: Adjustable from 1–200, default value 50. <small>(V1.0.0.3 and above)</small>
+8. `Output Comp` – Output Compensation: 0 = Disabled, 1 = Enabled. <small>(V1.0.0.5 and above)</small>
+9. `UART Mode` – UART Mode: 0 = Disabled, 1 = Enabled. Setting takes effect after power cycle. <small>(V1.0.0.5 and above)</small>
+10. `UART Baudrate` – UART Baudrate: 0-6, respectively corresponding to 9600, 19200, 38400, 57600, 115200, 230400, 460800. <small>(V1.0.0.5 and above)</small>
+11. `Factory Reset` – Factory Reset: Set to 1 and exit the settings menu to restore factory defaults (calibration values will not be cleared).
+12. `Offset Enable` – Calibration Enable: 0 = Disabled, 1 = Enabled. Factory default is 1 (calibrated).
 > UART pins are assigned to DP and DM of Type‑C connector:
 DP → TX, DM → RX, 3.3 V logic level.  
 `Note`: The external UART chip must feature reverse-current protection (e.g., CH340K) to prevent power backfeeding and PDPowerMiniV1 startup failure when the UART side is powered up first.
 
 ## Version History
-**V1.0.0.0**
-1. Initial version
-
-**V1.0.0.1**
-1. Added zero-point calibration for voltage and current to improve measurement accuracy.
-2. Optimized discharge logic: When output is enabled, discharge is enabled if (output voltage − set voltage) > 0.1V; if discharge lasts more than 5 seconds, it switches to 1‑second interval discharge mode. When output is disabled, discharge is enabled if output voltage > 0.1V; if discharge lasts more than 5 seconds, discharge is disabled.
-
-**V1.0.0.2**
-1. Added overcurrent discharge configuration, which supports disabling the overcurrent discharge function. This function is used to suppress output voltage overshoot under the "constant current sudden unload" scenario.
-2. Adjusted the minimum set voltage and current to 0.5V and 0.005A. Accuracy is not guaranteed below 1V and below 50mA.
-
-**V1.0.0.3**
-1. Added configurable moving average filter window size for output voltage and current, allowing flexible adjustment of filtering effect.
-2. Fixed the PD power display issue where the power showed "PD65WW" when switching from 100W to 65W.
-
-**V1.0.0.4**
-1. Optimize PD protocol, support EPR AVS, with the maximum requested voltage up to 24V.
-2. Add serial number display on the boot screen.
+**V1.0.1.0**
+1. Optimize PD protocol, support PPS.
+2. Add PD protocol request voltage setting (`PD Vset`), 8-24V, 0.1V step, only takes effect when output is disabled.
+3. Add output disable warning (`ERR`) when output voltage exceeds input voltage.
 
 **V1.0.0.5**
 1. Add output display error compensation function (Output Comp):  
@@ -45,6 +32,25 @@ Voltage compensation range: ±0.02 V; Current compensation range: ±0.003 A.
 UART pins are assigned to DP and DM of Type‑C connector:
 DP → TX, DM → RX, 3.3 V logic level.  
 `Note`: The external UART chip must feature reverse-current protection (e.g., CH340K) to prevent power backfeeding and PDPowerMiniV1 startup failure when the UART side is powered up first.
+
+**V1.0.0.4**
+1. Optimize PD protocol, support EPR AVS, with the maximum requested voltage up to 24V.
+2. Add serial number display on the boot screen.
+
+**V1.0.0.3**
+1. Added configurable moving average filter window size for output voltage and current, allowing flexible adjustment of filtering effect.
+2. Fixed the PD power display issue where the power showed "PD65WW" when switching from 100W to 65W.
+
+**V1.0.0.2**
+1. Added overcurrent discharge configuration, which supports disabling the overcurrent discharge function. This function is used to suppress output voltage overshoot under the "constant current sudden unload" scenario.
+2. Adjusted the minimum set voltage and current to 0.5V and 0.005A. Accuracy is not guaranteed below 1V and below 50mA.
+
+**V1.0.0.1**
+1. Added zero-point calibration for voltage and current to improve measurement accuracy.
+2. Optimized discharge logic: When output is enabled, discharge is enabled if (output voltage − set voltage) > 0.1V; if discharge lasts more than 5 seconds, it switches to 1‑second interval discharge mode. When output is disabled, discharge is enabled if output voltage > 0.1V; if discharge lasts more than 5 seconds, discharge is disabled.
+
+**V1.0.0.0**
+1. Initial version
 
 ## How to Upgrade, Windows
 1. Extract WeActStudio_Upgrade_Tool.7z
