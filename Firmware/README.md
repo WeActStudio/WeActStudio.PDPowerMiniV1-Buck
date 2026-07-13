@@ -18,6 +18,10 @@ DP → TX, DM → RX, 3.3 V logic level.
 `Note`: The external UART chip must feature reverse-current protection (e.g., CH340K) to prevent power backfeeding and PDPowerMiniV1 startup failure when the UART side is powered up first.
 
 ## Version History
+**V1.0.2.0**
+1. Optimize QC protocol.
+2. Add input voltage reading and PD input voltage read/write functions to the communication protocol.
+
 **V1.0.1.0**
 1. Optimize PD protocol, support PPS.
 2. Add PD protocol request voltage setting (`PD Vset`), 8-24V, 0.1V step, only takes effect when output is disabled.
