@@ -35,6 +35,9 @@
 ### 上位机说明
 ![display](Images/zh/4.png)
 
+### 社区项目
+- [PDPower Studio](https://github.com/EGaiotto/WeActStudio.PDPowerMiniV1-Buck/blob/master/Tools/PDPowerStudio/README_zh-CN.md)（作者 [@EGaiotto](https://github.com/EGaiotto)）——Windows 上位机，支持实时曲线、自动化（扫描、CC/CV 充电）、面向 AI 智能体的 MCP 服务器，以及简体中文 / English / Português 界面。基于本仓库公开的通信协议开发。
+
 ```
 /*---------------------------------------
 - WeAct Studio Official Link
