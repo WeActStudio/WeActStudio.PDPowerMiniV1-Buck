@@ -36,6 +36,9 @@ DP → TX, DM → RX, 3.3 V logic level.
 ### Computer Software Introduction
 ![display](Images/en/4.png)
 
+### Community Projects
+- [PDPower Studio](https://github.com/EGaiotto/WeActStudio.PDPowerMiniV1-Buck/tree/master/Tools/PDPowerStudio) by [@EGaiotto](https://github.com/EGaiotto) — Windows control app with live charts, automation (sweeps, CC/CV charging), an MCP server for AI agents and an English / Português / 简体中文 interface. Built on the communication protocol in this repository.
+
 ```
 /*---------------------------------------
 - WeAct Studio Official Link
