@@ -36,11 +36,15 @@ jobs:
           cache: npm
           cache-dependency-path: WebApp/package-lock.json
 
+      - id: pages
+        uses: actions/configure-pages@v6
+
       - run: npm ci
       - run: npm test
       - run: npm run build
-
-      - uses: actions/configure-pages@v6
+        env:
+          # Canonical URL for the meta tags in index.html.
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
 
       - uses: actions/upload-pages-artifact@v5
         with:
