@@ -1,0 +1,28 @@
+{
+  "name": "pdpower-webapp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Web Serial control panel for the WeAct Studio PD Power Mini V1 / V1.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@picocss/pico": "^2.1.1",
+    "uplot": "^1.6.32",
+    "vue": "^3.5.45",
+    "vue-i18n": "^11.4.19"
+  },
+  "devDependencies": {
+    "@types/w3c-web-serial": "^1.0.9",
+    "@vitejs/plugin-vue": "^6.0.11",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0",
+    "vue-tsc": "^3.3.14"
+  }
+}
