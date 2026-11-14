@@ -21,6 +21,7 @@ export default {
     title: "输出",
     voltage: "电压",
     current: "电流",
+    set: "设定",
     power: "功率",
     enable: "输出使能",
     stale: "设备无响应",

@@ -172,6 +172,14 @@ async function readPreset(id: number): Promise<void> {
   if (p.id < PRESET_COUNT) state.presets[p.id] = { voltage: p.mV / 1000, current: p.mA / 1000 };
 }
 
+/** Selected preset plus its set-points (both can be changed with the device's own buttons). */
+async function readActivePreset(): Promise<void> {
+  const id = await device.activePreset();
+  if (id >= PRESET_COUNT) return;
+  state.activePreset = id;
+  await readPreset(id);
+}
+
 async function readMeasured(): Promise<void> {
   const m = await device.measuredOutput();
   state.measured = { voltage: m.mV / 1000, current: m.mA / 1000 };
@@ -195,6 +203,7 @@ function startPolling(): void {
         await readMeasured(); // every 200 ms
         if (tick % 2 === 0) state.output = await device.outputState(); // every 400 ms
         if (state.supportsInput && tick % 5 === 0) await readInput(); // every 1 s
+        if (tick % 5 === 3) await readActivePreset(); // every 1 s: picks up changes made on the device
         missed = 0;
         state.stale = false;
       } catch {

@@ -178,6 +178,12 @@ article {
   margin-left: 0.2em;
   color: var(--pico-muted-color);
 }
+.setpoint {
+  font-size: 0.875rem;
+  color: var(--pico-muted-color);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .readout.secondary-readout {
   font-size: clamp(1.4rem, 4vw, 1.8rem);
 }

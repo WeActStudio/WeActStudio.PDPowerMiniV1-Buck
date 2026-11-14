@@ -6,6 +6,8 @@ import { store, setOutputEnabled } from "../lib/store";
 const { t } = useI18n();
 
 const power = computed(() => store.measured.voltage * store.measured.current);
+/** Set-points of the selected preset (M0..M4). */
+const setpoint = computed(() => store.presets[store.activePreset]);
 
 async function onToggle(e: Event) {
   const el = e.target as HTMLInputElement;
@@ -29,10 +31,12 @@ async function onToggle(e: Event) {
     <div class="readouts">
       <div>
         <small>{{ t("output.voltage") }}</small>
+        <div class="setpoint">{{ t("output.set") }} {{ store.connected ? `${setpoint.voltage.toFixed(3)} V` : "—" }}</div>
         <div class="readout">{{ store.measured.voltage.toFixed(3) }}<span>V</span></div>
       </div>
       <div>
         <small>{{ t("output.current") }}</small>
+        <div class="setpoint">{{ t("output.set") }} {{ store.connected ? `${setpoint.current.toFixed(3)} A` : "—" }}</div>
         <div class="readout">{{ store.measured.current.toFixed(3) }}<span>A</span></div>
       </div>
       <div>

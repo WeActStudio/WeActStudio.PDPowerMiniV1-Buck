@@ -27,7 +27,6 @@ async function onToggle(e: Event, key: (typeof toggles)[number]["key"], set: Set
   const el = e.target as HTMLInputElement;
   await set(el.checked);
   el.checked = store.settings[key] ?? false;
-  el.indeterminate = store.settings[key] === null;
 }
 
 const brightness = ref(50);
@@ -75,7 +74,6 @@ function confirmThen(message: string, action: () => Promise<void>) {
               type="checkbox"
               role="switch"
               :checked="store.settings[item.key] === true"
-              :indeterminate="store.connected && store.settings[item.key] === null"
               :disabled="!store.connected"
               @change="onToggle($event, item.key, item.set)"
             />

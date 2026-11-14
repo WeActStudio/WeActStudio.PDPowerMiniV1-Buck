@@ -21,6 +21,7 @@ export default {
     title: "Выход",
     voltage: "Напряжение",
     current: "Ток",
+    set: "Уст.",
     power: "Мощность",
     enable: "Включить выход",
     stale: "Устройство не отвечает",

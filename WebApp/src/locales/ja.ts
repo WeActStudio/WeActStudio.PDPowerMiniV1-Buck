@@ -21,6 +21,7 @@ export default {
     title: "出力",
     voltage: "電圧",
     current: "電流",
+    set: "設定",
     power: "電力",
     enable: "出力有効",
     stale: "デバイスが応答しません",

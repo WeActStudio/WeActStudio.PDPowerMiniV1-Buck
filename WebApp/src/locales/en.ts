@@ -21,6 +21,7 @@ export default {
     title: "Output",
     voltage: "Voltage",
     current: "Current",
+    set: "Set",
     power: "Power",
     enable: "Output enable",
     stale: "Device not responding",
