@@ -1,0 +1,325 @@
+/* Layout and a few app-specific pieces on top of Pico CSS. */
+
+:root {
+  --viz-voltage: #2a78d6;
+  --viz-current: #eb6834;
+  --status-warning: #b26b00;
+  --status-critical: #c62828;
+  --status-good: #2e7d32;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --viz-voltage: #3987e5;
+    --viz-current: #d95926;
+    --status-warning: #e0a030;
+    --status-critical: #ef6461;
+    --status-good: #5cb85f;
+  }
+}
+:root[data-theme="dark"] {
+  --viz-voltage: #3987e5;
+  --viz-current: #d95926;
+  --status-warning: #e0a030;
+  --status-critical: #ef6461;
+  --status-good: #5cb85f;
+}
+
+body {
+  background: var(--pico-background-color);
+}
+
+header.container {
+  padding-bottom: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.brand span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.brand small {
+  color: var(--pico-muted-color);
+}
+nav {
+  flex-wrap: wrap;
+}
+.brand .device-line {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 576px) {
+  .brand .subtitle {
+    display: none;
+  }
+  nav ul:last-child {
+    flex-wrap: wrap;
+  }
+  /* Tighter controls so language, theme, options and connect fit on one row. */
+  nav {
+    --pico-nav-element-spacing-horizontal: 0.3rem;
+  }
+  nav select,
+  nav button,
+  nav summary[role="button"] {
+    padding-inline: 0.6rem;
+  }
+  nav select {
+    padding-inline-end: 2rem;
+  }
+}
+nav select {
+  margin-bottom: 0;
+  width: auto;
+}
+nav button {
+  margin-bottom: 0;
+}
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 0.7rem;
+}
+.theme-toggle svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Connection options dropdown (Pico .dropdown) */
+nav details.dropdown {
+  margin-bottom: 0;
+}
+.connection-dropdown summary {
+  margin-bottom: 0;
+}
+nav details.dropdown.connection-dropdown > summary + ul {
+  left: auto;
+  right: 0;
+  width: min(22rem, calc(100vw - 2rem));
+  min-width: 0;
+  max-width: none;
+}
+/* On phones the button row wraps; anchor the menu to the row instead of the button. */
+@media (max-width: 576px) {
+  nav ul:has(> li > .connection-dropdown) {
+    position: relative;
+  }
+  nav details.dropdown.connection-dropdown {
+    position: static;
+  }
+  nav details.dropdown.connection-dropdown > summary + ul {
+    left: var(--pico-nav-element-spacing-horizontal);
+    right: auto;
+  }
+}
+.connection-dropdown li {
+  white-space: normal;
+  padding-block: 0.6rem;
+}
+.connection-dropdown li:hover {
+  background-color: transparent;
+}
+.connection-dropdown li label {
+  margin-bottom: 0.25rem;
+}
+.connection-dropdown li select {
+  margin: 0.25rem 0 0;
+}
+.connection-dropdown small {
+  display: block;
+  color: var(--pico-muted-color);
+  line-height: 1.35;
+}
+
+.panels {
+  display: grid;
+  gap: 0 var(--pico-grid-column-gap);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+}
+article {
+  min-width: 0;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Readouts */
+.readouts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.readouts small {
+  color: var(--pico-muted-color);
+}
+.readout {
+  white-space: nowrap;
+  font-size: clamp(1.8rem, 3.4vw, 2.6rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.readout span {
+  font-size: 0.5em;
+  margin-left: 0.2em;
+  color: var(--pico-muted-color);
+}
+.setpoint {
+  font-size: 0.875rem;
+  color: var(--pico-muted-color);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.readout.secondary-readout {
+  font-size: clamp(1.4rem, 4vw, 1.8rem);
+}
+.output-switch {
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Mode badge: status colors, always with a text label. */
+.badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+.badge.ok { color: var(--status-good); }
+.badge.cc { color: var(--status-warning); }
+.badge.oc { color: var(--status-critical); }
+
+/* Presets */
+.preset-buttons {
+  margin-bottom: 0.5rem;
+}
+.preset-buttons button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 0;
+  font-variant-numeric: tabular-nums;
+}
+.preset-form {
+  margin-top: 1rem;
+  align-items: end;
+}
+.preset-form input {
+  font-variant-numeric: tabular-nums;
+}
+.actions small,
+.setting > small,
+article form small {
+  display: block;
+  color: var(--pico-muted-color);
+  margin-bottom: 0.5rem;
+}
+footer [role="group"] {
+  margin-bottom: 0;
+}
+/* Let long labels (e.g. Russian) wrap instead of pushing the group off-screen. */
+article [role="group"] > button {
+  min-width: 0;
+  white-space: normal;
+}
+/* A button beside an input (e.g. PD voltage "Set") keeps its natural width; the input takes the rest. */
+article [role="group"] > input ~ button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* Settings */
+.settings-grid {
+  display: grid;
+  gap: 0 calc(var(--pico-grid-column-gap) * 2);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+.setting {
+  margin-bottom: 1rem;
+}
+.setting > label {
+  margin-bottom: 0.25rem;
+}
+.muted {
+  color: var(--pico-muted-color);
+}
+
+/* Chart */
+.chart-actions {
+  width: auto;
+  margin: 0;
+}
+.chart-actions button {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+}
+.chart {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+.chart .u-legend {
+  font-size: 0.85rem;
+  color: var(--pico-color);
+}
+.chart .u-legend th {
+  font-weight: normal;
+}
+
+/* Notices */
+.notices {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.notice {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 28rem;
+  padding: 0.6rem 0.6rem 0.6rem 1rem;
+  border-radius: var(--pico-border-radius);
+  background: var(--pico-card-background-color);
+  box-shadow: var(--pico-card-box-shadow);
+  border-left: 4px solid var(--pico-primary);
+  white-space: pre-line;
+}
+.notice.error {
+  border-left-color: var(--status-critical);
+}
+.notice button {
+  margin: 0 0 0 auto;
+  padding: 0.1rem 0.55rem;
+  line-height: 1.2;
+}
+
+.unsupported {
+  border-left: 4px solid var(--status-warning);
+}
+
+.site-footer {
+  padding-top: 0;
+  color: var(--pico-muted-color);
+  text-align: center;
+}
