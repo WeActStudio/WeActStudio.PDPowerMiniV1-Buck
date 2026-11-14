@@ -4,11 +4,93 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#0172ad" />
+
+    <title>WeAct PD Power Mini Web App: USB-C PD Power Supply Control</title>
+    <meta
+      name="description"
+      content="Control the WeAct Studio PD Power Mini V1 / V1.1 USB-C PD power supply from your browser over Web Serial. Set voltage, current limit and presets, and log live readings. No install needed."
+    />
+    <meta
+      name="keywords"
+      content="WeAct PD app, WeAct PD Power Mini, PDPowerMiniV1, PD Power Mini V1.1, WeAct Studio, USB-C PD power supply, PD Power Communication Tool, Web Serial, buck converter, bench power supply"
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="__SITE_URL__" />
     <link rel="icon" type="image/png" href="./logo.png" />
-    <title>PD Power Mini</title>
+    <link rel="apple-touch-icon" href="./logo.png" />
+
+    <!-- Open Graph / link previews -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PD Power Mini Web App" />
+    <meta property="og:title" content="WeAct PD Power Mini Web App" />
+    <meta
+      property="og:description"
+      content="Browser-based control panel for the WeAct Studio PD Power Mini USB-C PD power supply. Live readings, presets and settings over Web Serial."
+    />
+    <meta property="og:url" content="__SITE_URL__" />
+    <meta property="og:image" content="__SITE_URL__logo.png" />
+    <meta property="og:image:width" content="200" />
+    <meta property="og:image:height" content="200" />
+    <meta property="og:image:alt" content="PD Power Mini logo" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <meta property="og:locale:alternate" content="ja_JP" />
+    <meta property="og:locale:alternate" content="ru_RU" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="WeAct PD Power Mini Web App" />
+    <meta
+      name="twitter:description"
+      content="Control the WeAct Studio PD Power Mini USB-C PD power supply from your browser over Web Serial."
+    />
+    <meta name="twitter:image" content="__SITE_URL__logo.png" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "PD Power Mini Web App",
+        "alternateName": [
+          "WeAct PD App",
+          "WeAct PD Power Mini Web App",
+          "PDPowerMiniV1 Web Serial Tool",
+          "PD Power Communication Tool (web version)"
+        ],
+        "description": "Unofficial, open-source web app for the WeAct Studio PD Power Mini V1 / V1.1 USB-C PD power supply. It connects over Web Serial to read live voltage and current, switch the output, edit the M0 to M4 presets, set the PD request voltage and change device settings.",
+        "url": "__SITE_URL__",
+        "image": "__SITE_URL__logo.png",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Windows, macOS, Linux, ChromeOS",
+        "browserRequirements": "Requires a Chromium-based desktop browser with Web Serial support (Chrome, Edge, Opera).",
+        "inLanguage": ["en", "zh", "ja", "ru"],
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "codeRepository": "https://github.com/Brisk4t/WeActStudio.PDPowerMiniV1-Buck",
+        "about": {
+          "@type": "Product",
+          "name": "WeAct Studio PD Power Mini V1 Buck",
+          "brand": { "@type": "Brand", "name": "WeAct Studio" }
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="app"></div>
+    <noscript>
+      <main style="max-width: 40rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif">
+        <h1>WeAct PD Power Mini Web App</h1>
+        <p>
+          An unofficial, open-source web app for the WeAct Studio PD Power Mini V1 / V1.1 USB-C PD power
+          supply. It replaces the desktop PD Power Communication Tool: connect over Web Serial to read live
+          voltage, current and power, switch the output on and off, edit the M0 to M4 presets, set the PD request
+          voltage and change over-current protection, calibration and brightness settings.
+        </p>
+        <p>
+          This app needs JavaScript and a Chromium-based desktop browser (Chrome, Edge or Opera). Source code:
+          <a href="https://github.com/Brisk4t/WeActStudio.PDPowerMiniV1-Buck">GitHub</a>.
+        </p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

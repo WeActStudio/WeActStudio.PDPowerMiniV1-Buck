@@ -83,5 +83,9 @@ export default {
   },
   messages: { saved: "Настройки сохранены в устройство" },
   theme: { toLight: "Светлая тема", toDark: "Тёмная тема" },
+  footer: {
+    about: "Неофициальное веб-приложение с открытым исходным кодом для USB-C PD блока питания WeAct Studio PD Power Mini V1 / V1.1. Не связано с WeAct Studio.",
+    source: "Исходный код на GitHub",
+  },
   common: { dismiss: "Закрыть" },
 };

@@ -9,6 +9,8 @@ import LiveChart from "./components/LiveChart.vue";
 import SettingsPanel from "./components/SettingsPanel.vue";
 
 const { t } = useI18n();
+
+const REPO_URL = "https://github.com/Brisk4t/WeActStudio.PDPowerMiniV1-Buck";
 </script>
 
 <template>
@@ -28,4 +30,10 @@ const { t } = useI18n();
     <LiveChart />
     <SettingsPanel />
   </main>
+  <footer class="container site-footer">
+    <small>
+      {{ t("footer.about") }}
+      <a :href="REPO_URL" target="_blank" rel="noopener">{{ t("footer.source") }}</a>
+    </small>
+  </footer>
 </template>

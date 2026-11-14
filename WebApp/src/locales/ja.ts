@@ -83,5 +83,9 @@ export default {
   },
   messages: { saved: "設定をデバイスに保存しました" },
   theme: { toLight: "ライトモードに切り替え", toDark: "ダークモードに切り替え" },
+  footer: {
+    about: "WeAct Studio PD Power Mini V1 / V1.1 USB-C PD 電源用の非公式オープンソース Web アプリです。WeAct Studio とは関係ありません。",
+    source: "GitHub のソースコード",
+  },
   common: { dismiss: "閉じる" },
 };

@@ -83,5 +83,9 @@ export default {
   },
   messages: { saved: "设置已保存到设备" },
   theme: { toLight: "切换到浅色模式", toDark: "切换到深色模式" },
+  footer: {
+    about: "WeAct Studio PD Power Mini V1 / V1.1 USB-C PD 电源的非官方开源网页应用,与 WeAct Studio 无关联。",
+    source: "GitHub 源代码",
+  },
   common: { dismiss: "关闭" },
 };

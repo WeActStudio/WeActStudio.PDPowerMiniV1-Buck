@@ -36,6 +36,19 @@ npm run preview    # serve dist/ locally
 
 `dist/` uses relative paths, so you can host it on any static server or sub-path (GitHub Pages, a NAS, etc.).
 
+## Deploying to GitHub Pages
+
+`.github/workflows/deploy-webapp.yml` runs the tests, builds `WebApp/` and publishes `dist/` to GitHub Pages.
+It runs on every push to `master` that changes `WebApp/`, and you can also start it by hand from the Actions tab.
+
+One-time setup: in the repository's **Settings → Pages → Build and deployment**, set **Source** to **GitHub Actions**.
+The site is then served at `https://<user>.github.io/<repo>/`. Pages serves over HTTPS, which Web Serial requires.
+
+### Search engines
+
+The build writes the deployed URL (`SITE_URL`, which CI sets from the Pages deployment) into the canonical,
+Open Graph and JSON-LD tags in `index.html`.
+
 ## Stack
 
 | Concern | Library |

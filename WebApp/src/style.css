@@ -230,6 +230,11 @@ article [role="group"] > button {
   min-width: 0;
   white-space: normal;
 }
+/* A button beside an input (e.g. PD voltage "Set") keeps its natural width; the input takes the rest. */
+article [role="group"] > input ~ button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
 
 /* Settings */
 .settings-grid {
@@ -305,4 +310,10 @@ article [role="group"] > button {
 
 .unsupported {
   border-left: 4px solid var(--status-warning);
+}
+
+.site-footer {
+  padding-top: 0;
+  color: var(--pico-muted-color);
+  text-align: center;
 }

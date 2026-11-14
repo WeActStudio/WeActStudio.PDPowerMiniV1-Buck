@@ -83,5 +83,9 @@ export default {
   },
   messages: { saved: "Settings saved to the device" },
   theme: { toLight: "Switch to light mode", toDark: "Switch to dark mode" },
+  footer: {
+    about: "Unofficial, open-source web app for the WeAct Studio PD Power Mini V1 / V1.1 USB-C PD power supply. Not affiliated with WeAct Studio.",
+    source: "Source on GitHub",
+  },
   common: { dismiss: "Dismiss" },
 };
