@@ -1,22 +1,54 @@
 > 升级后需要手动恢复出厂设置，否则会导致设备无法正常工作。
 
-## 设置项说明
+# 固件升级方法
+## Windows下怎样升级
+1. 解压WeActStudio_Upgrade_Tool.7z
+2. 运行WeActStudio_Upgrade_Tool.exe
+3. 使用数据线连接设备
+4. 选择fpk固件
+5. 打开串口
+6. 点击发送按钮，开始升级
+
+## Linux、macOS或Windows下怎样升级
+1. 解压WeActStudio_Upgrade_Tool_Python.zip
+2. 使用数据线连接设备
+3. 运行WeActStudio_Upgrade_Tool.py, 需要安装pyserial库  
+示例：python WeActStudio_Upgrade_Tool.py firmware.fpk
+4. 等待升级完成
+
+## 通过浏览器升级，支持Chrome内核的浏览器
+1. 使用数据线连接设备
+2. 打开浏览器，访问 https://tools.weactstudio.com/FirmwareUpdater/
+3. 根据提示操作
+
+# 设置项说明
 1. `PD Vset` PD协议请求电压设置：8-24V设置，仅在输出为OFF状态下生效。<small>(软件版本V1.0.1.0及以上)</small>
 2. `Brightness` 亮度： 0-100%设置，0-10%为超低亮度。
 3. `Reverse Dis` 翻转显示：0为正常，1为翻转180°，重新上电生效。
 4. `OCP Enable` 过流保护：0为不使能，1为使能，电流超过设置值200ms左右关断输出。
 5. `OC Discharge` 过流放电：0为不使能，1为使能。<small>(软件版本V1.0.0.2及以上)</small>
 6. `AUTO OUT` 自动输出：0为不使能，1为使能，上电后自动使能输出。
-7. `Filter.Win` 输出滤波窗口设置：1-200，默认50。<small>(软件版本V1.0.0.3及以上)</small>
-8. `Output Comp` 输出显示误差补偿：0为不使能，1为使能。<small>(软件版本V1.0.0.5及以上)</small>
-9. `UART Mode` 串口通讯使能：0为不使能，1为使能，重新上电生效。<small>(软件版本V1.0.0.5及以上)</small>
-10. `UART Baudrate` 串口波特率：0-6 分别对应9600,19200,38400,57600,115200,230400,460800。<small>(软件版本V1.0.0.5及以上)</small>
-11. `Factory Reset` 恢复出厂设置：设置为1后退出设置界面恢复出厂设置(不会清除校准值)。
-12. `Offset Enable` 校准使能：0为不使能，1为使能，出厂为1，已校准。
+7. `ON Time` 使能时间：输出保持开启的时长，0:00-999:59（分:秒），默认0。<small>(软件版本V1.0.3.0及以上)</small>
+8. `OFF Time` 关闭时间：输出保持关闭的时长，0:00-999:59（分:秒），默认0。<small>(软件版本V1.0.3.0及以上)</small>
+9. `Timer En` 定时模式：0为不使能，1为使能，使能后按ON键启动序列，再按ON键停止，序列运行期间ON/OFF底色为黄色。<small>(软件版本V1.0.3.0及以上)</small>
+10. `Filter.Win` 输出滤波窗口设置：1-200，默认50。<small>(软件版本V1.0.0.3及以上)</small>
+11. `Output Comp` 输出显示误差补偿：0为不使能，1为使能。<small>(软件版本V1.0.0.5及以上)</small>
+12. `UART Mode` 串口通讯使能：0为不使能，1为使能，重新上电生效。<small>(软件版本V1.0.0.5及以上)</small>
+13. `UART Baudrate` 串口波特率：0-6 分别对应9600,19200,38400,57600,115200,230400,460800。<small>(软件版本V1.0.0.5及以上)</small>
+14. `Factory Reset` 恢复出厂设置：设置为1后退出设置界面恢复出厂设置(不会清除校准值)。
+15. `Offset Enable` 校准使能：0为不使能，1为使能，出厂为1，已校准。
+> 时间为0表示该相位不执行：关闭时间为0时输出开完即结束(单次)，使能时间为0时序列不启动并提示`ERR`。剩余时间不上屏显示。
+
 > 串口通讯管脚为TypeC连接器DP和DM引脚，`DP`→`TX`，`DM`→`RX`，3.3V电平。  
 `注意`：外部串口芯片须具备防倒灌特性（例如 CH340K），防止串口先行上电，反向倒灌造成电源无法启动。
 
-## 版本历史
+# 版本历史
+**V1.0.3.0**
+1. 新增定时开关，按设定时间自动通断输出。关闭时间设为 0 为单次，非 0 为循环。
+2. 新增 5 组通讯命令，覆盖 OC 放电、自动输出、滤波窗口、输出补偿、定时设置。
+3. 优化界面刷新速度。
+4. 修复一些问题。
+
 **V1.0.2.0**
 1. 优化QC协议。
 2. 通讯协议新增输入电压读取功能以及PD输入电压读取和设置功能。
@@ -53,18 +85,3 @@
 
 **V1.0.0.0**
 1. 初始版本
-
-## Windows下怎样升级
-1. 解压WeActStudio_Upgrade_Tool.7z
-2. 运行WeActStudio_Upgrade_Tool.exe
-3. 使用数据线连接设备
-4. 选择fpk固件
-5. 打开串口
-6. 点击发送按钮，开始升级
-
-## Linux、macOS或Windows下怎样升级
-1. 解压WeActStudio_Upgrade_Tool_Python.zip
-2. 使用数据线连接设备
-3. 运行WeActStudio_Upgrade_Tool.py, 需要安装pyserial库  
-示例：python WeActStudio_Upgrade_Tool.py firmware.fpk
-4. 等待升级完成

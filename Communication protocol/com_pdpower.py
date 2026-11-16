@@ -17,6 +17,11 @@ class Command(IntEnum):
     CMD_BRIGHTNESS = 0x08
     CMD_OUTPUT_DISCHARGE_EN = 0x09
     CMD_INPUT_STATE = 0x0A
+    CMD_OUTPUT_OC_DISCHARGE_EN = 0x0B
+    CMD_OUTPUT_AUTO_EN = 0x0C
+    CMD_FILTER_WINDOW_SIZE = 0x0D
+    CMD_OUTPUT_COMP_EN = 0x0E
+    CMD_TIMER_SET = 0x0F
     CMD_SYSTEM_RESET = 0x40
     CMD_SYSTEM_UPGRADE = 0x41
     CMD_SYSTEM_VERSION = 0x42
@@ -43,6 +48,11 @@ class Command(IntEnum):
             Command.CMD_BRIGHTNESS: 3,
             Command.CMD_SYSTEM_VERSION: 0,
             Command.CMD_SYSTEM_SERIAL_NUM: 0,
+            Command.CMD_OUTPUT_OC_DISCHARGE_EN: 3,
+            Command.CMD_OUTPUT_AUTO_EN: 3,
+            Command.CMD_FILTER_WINDOW_SIZE: 3,
+            Command.CMD_OUTPUT_COMP_EN: 3,
+            Command.CMD_TIMER_SET: 7,
         }.get(self, 0)
 
 class InputState(IntEnum):
@@ -58,6 +68,10 @@ class Com_PdPower:
     def __init__(
         self, port, baudrate=115200, timeout=1, queue_maxsize=100, use_crc8=False
     ):
+        """
+        打开串口并启动收、发两个后台线程
+        Open the serial port and start the reader and writer threads
+        """
         self.ser = serial.Serial(port, baudrate, timeout=timeout)
         if not self.ser.is_open:
             raise Exception(f"无法打开串口 Unable to open serial port {port}")
@@ -67,11 +81,21 @@ class Com_PdPower:
         self._write_ok_event = threading.Event()
         self._read_result = None
         self._read_thread = threading.Thread(target=self._read_serial, daemon=True)
+        self._use_crc8 = use_crc8
+        self._model = None
+        # UART frames end with CRC8 and the device splits them by USART IDLE:
+        # frames written back to back land in one buffer, fail CRC over the whole
+        # buffer and are dropped silently. Four character times of idle is the
+        # margin measured on hardware; below three the second frame is lost.
+        # 设备靠 USART 空闲中断分帧，背靠背写出的两帧会落进同一段缓冲，
+        # 整段校验失败后被静默丢弃。四个字符时间的间隔是实板测出的余量，
+        # 低于三个字符时间第二帧就会丢。
+        self._baudrate = float(baudrate)
+        self._frame_gap = 40.0 / self._baudrate if use_crc8 else 0.0
         self._read_thread.start()
         self._send_queue = Queue(maxsize=queue_maxsize)
         self._send_thread = threading.Thread(target=self._send_commands, daemon=True)
         self._send_thread.start()
-        self._use_crc8 = use_crc8
 
     def _read_serial(self):
         """
@@ -96,9 +120,9 @@ class Com_PdPower:
                                 end_pos = 3 + buffer[1]
                                 frame = buffer[:end_pos]
                                 buffer = buffer[end_pos + 1 :]
-                                # Check CRC if enabled
+                                # 启用校验时校验 CRC / Check CRC when enabled
                                 if self._use_crc8 and len(frame) > 1:
-                                    # Extract data without CRC
+                                    # 去掉 CRC 后取数据 / Strip CRC from the reply
                                     data = frame[:-1]
                                     received_crc = frame[-1]
                                     calculated_crc = self.calculate_crc8(data)
@@ -138,7 +162,7 @@ class Com_PdPower:
                             if len(buffer) >= Command(cmd).READ_LENGTH:
                                 frame = buffer[: Command(cmd).READ_LENGTH]
                                 if self._use_crc8:
-                                    # Extract data without CRC
+                                    # 去掉 CRC 后取数据 / Strip CRC from the reply
                                     data = frame[:-1]
                                     received_crc = frame[-1]
                                     calculated_crc = self.calculate_crc8(data)
@@ -163,7 +187,11 @@ class Com_PdPower:
                         buffer = bytearray()
                         time_last = time.time()
 
-                time.sleep(0.01)
+                # 1 ms keeps the reply latency near the device's own 3 ms at high
+                # baud; 10 ms here capped the whole library at ~96 reads per second
+                # 高波特率下 1 ms 轮询才能贴近设备本身的 3 ms 响应；
+                # 这里原先用 10 ms，把整个库的读取速度压在每秒 96 次左右。
+                time.sleep(0.001)
 
             except serial.SerialException as e:
                 print(f"串口断开连接 Serial port disconnected: {e}")
@@ -177,18 +205,32 @@ class Com_PdPower:
 
     def _send_commands(self):
         """
-        线程函数，处理队列中的指令发送，队列空闲时每隔 100ms 发送坐标查询命令
-        Thread function, handle command sending in the queue, and send coordinate query commands every 100ms when the queue is idle
+        线程函数，从队列取指令逐条发送
+        Thread function, send queued commands one at a time
         """
         while not self._stop_event.is_set():
             try:
-                # 持续处理队列中的所有命令
-                while True:
-                    w_data = self._send_queue.get_nowait()
-                    self.ser.write(w_data)
-                    self._write_ok_event.set()
+                w_data = self._send_queue.get(timeout=0.1)
             except Empty:
-                time.sleep(0.1)
+                continue
+            except serial.SerialException as e:
+                print(f"串口断开连接 Serial port disconnected: {e}")
+                traceback.print_exc()
+                self.ser.close()
+                return
+
+            try:
+                self.ser.write(w_data)
+                if self._frame_gap:
+                    # The USB bridge takes bytes far faster than the line sends
+                    # them, so flush() and out_waiting both go empty while the
+                    # frame is still shifting out. Wait the frame's own airtime,
+                    # then the idle gap, or the next frame merges into this one.
+                    # USB 桥接收字节远快于线路发送，flush() 和 out_waiting 都会在
+                    # 线路仍在发送时变为空。必须按帧自身的上线时长等待，再加上
+                    # 空闲间隔，否则下一帧会与本帧粘连。
+                    time.sleep(len(w_data) * 10.0 / self._baudrate + self._frame_gap)
+                self._write_ok_event.set()
             except serial.SerialException as e:
                 print(f"串口断开连接 Serial port disconnected: {e}")
                 traceback.print_exc()
@@ -196,7 +238,6 @@ class Com_PdPower:
                 return
             except Exception as e:
                 print(f"发送指令时出错 Error sending command: {e}")
-                pass
 
     def send_command(self, cmd):
         """
@@ -209,10 +250,14 @@ class Com_PdPower:
             print("发送指令队列已满，指令丢弃 Command queue is full, command discarded")
 
     def who_am_i(self):
+        """
+        读取型号标识字符串
+        Read the model identifier string
+        """
         s = bytearray()
         s.append(Command.CMD_WHO_AM_I | Command.CMD_READ)
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s)
             s.append(crc)
@@ -221,16 +266,20 @@ class Com_PdPower:
 
         self._read_ok_event.clear()
         self.send_command(s)
-        if not self._read_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
             return None
         return self._read_result.decode("utf-8")
 
     def system_version(self):
+        """
+        读取固件版本字符串
+        Read the firmware version string
+        """
         s = bytearray()
         s.append(Command.CMD_SYSTEM_VERSION | Command.CMD_READ)
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s)
             s.append(crc)
@@ -239,16 +288,20 @@ class Com_PdPower:
 
         self._read_ok_event.clear()
         self.send_command(s)
-        if not self._read_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
             return None
         return self._read_result.decode("utf-8")
 
     def system_serial_num(self):
+        """
+        读取设备序列号
+        Read the device serial number
+        """
         s = bytearray()
         s.append(Command.CMD_SYSTEM_SERIAL_NUM | Command.CMD_READ)
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s)
             s.append(crc)
@@ -257,17 +310,21 @@ class Com_PdPower:
 
         self._read_ok_event.clear()
         self.send_command(s)
-        if not self._read_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
             return None
         return self._read_result.decode("utf-8")
 
     def output_enable(self, enable=True):
+        """
+        设置输出使能
+        Enable or disable the output
+        """
         s = bytearray(3)
         s[0] = Command.CMD_OUTPUT_EN_STATE
         s[1] = 0x01 if enable else 0x00
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -276,14 +333,25 @@ class Com_PdPower:
 
         self._write_ok_event.clear()
         self.send_command(s)
-        if not self._write_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._write_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
 
     def output_state(self):
+        """
+        读取输出状态字节
+        Read the output state byte
+
+        bit0 输出使能，bit1 恒流中，bit3 定时序列运行中
+        序列断相位时 bit0 为 0、bit3 为 1，与手动关断可区分
+
+        bit0 output enabled, bit1 constant current, bit3 timer sequence running
+        In the off phase bit0 is 0 while bit3 stays 1, which tells a timer
+        shutdown apart from a manual one
+        """
         s = bytearray(2)
         s[0] = Command.CMD_OUTPUT_EN_STATE | Command.CMD_READ
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -292,17 +360,21 @@ class Com_PdPower:
 
         self._read_ok_event.clear()
         self.send_command(s)
-        if not self._read_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
             return None
         state = self._read_result[0]
         return state
 
     def output_id_get(self):
+        """
+        读取当前输出组号
+        Read the active output group index
+        """
         s = bytearray(2)
         s[0] = Command.CMD_OUTPUT_ID | Command.CMD_READ
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -311,17 +383,21 @@ class Com_PdPower:
 
         self._read_ok_event.clear()
         self.send_command(s)
-        if not self._read_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
             return None
         return self._read_result
 
     def output_id_set(self, id):
+        """
+        选择输出组
+        Select the output group
+        """
         s = bytearray(3)
         s[0] = Command.CMD_OUTPUT_ID
         s[1] = id
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -330,10 +406,14 @@ class Com_PdPower:
 
         self._write_ok_event.clear()
         self.send_command(s)
-        if not self._write_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._write_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
 
     def output_data_set(self, id, voltage, current):
+        """
+        设置指定组的电压与电流
+        Set voltage and current of a group
+        """
         s = bytearray(7)
         s[0] = Command.CMD_OUTPUT_DATA
         s[1] = id
@@ -342,7 +422,7 @@ class Com_PdPower:
         s[4] = int(current & 0xFF)
         s[5] = int(current >> 8)
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -351,15 +431,19 @@ class Com_PdPower:
 
         self._write_ok_event.clear()
         self.send_command(s)
-        if not self._write_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._write_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
 
     def output_data_get(self, id):
+        """
+        读取指定组的电压与电流
+        Read voltage and current of a group
+        """
         s = bytearray(3)
         s[0] = Command.CMD_OUTPUT_DATA | Command.CMD_READ
         s[1] = id
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -368,7 +452,7 @@ class Com_PdPower:
 
         self._read_ok_event.clear()
         self.send_command(s)
-        if not self._read_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
             return None
         voltage = self._read_result[1] | (self._read_result[2] << 8)
@@ -376,10 +460,14 @@ class Com_PdPower:
         return voltage, current
 
     def output_display_get(self):
+        """
+        读取实时输出电压与电流
+        Read live output voltage and current
+        """
         s = bytearray(2)
         s[0] = Command.CMD_OUTPUT_DISPLAY | Command.CMD_READ
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -388,7 +476,7 @@ class Com_PdPower:
 
         self._read_ok_event.clear()
         self.send_command(s)
-        if not self._read_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
             return None
         voltage = self._read_result[0] | (self._read_result[1] << 8)
@@ -396,10 +484,14 @@ class Com_PdPower:
         return voltage, current
 
     def input_state_get(self):
+        """
+        读取输入电源状态与输入电压
+        Read input power state and voltage
+        """
         s = bytearray(2)
         s[0] = Command.CMD_INPUT_STATE | Command.CMD_READ
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -408,7 +500,7 @@ class Com_PdPower:
 
         self._read_ok_event.clear()
         self.send_command(s)
-        if not self._read_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
             return None
         state = InputState(self._read_result[0])
@@ -418,6 +510,9 @@ class Com_PdPower:
     
     def input_pd_voltage_set(self, voltage):
         """
+        设置 PD 请求电压
+        Set the PD requested voltage
+
         unit: V
         """
         voltage = round(voltage * 10)
@@ -427,7 +522,7 @@ class Com_PdPower:
         s[1] = int(voltage & 0xFF)
         s[2] = int(voltage >> 8)
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -436,15 +531,18 @@ class Com_PdPower:
 
         self._write_ok_event.clear()
         self.send_command(s)
-        if not self._write_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._write_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
     
     def output_offset_enable(self, enable=True):
+        """
+        设置校准使能
+        Enable or disable calibration
+        """
         s = bytearray(3)
         s[0] = Command.CMD_OUTPUT_OFFSET_EN
         s[1] = 0x01 if enable else 0x00
-
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -453,109 +551,18 @@ class Com_PdPower:
 
         self._write_ok_event.clear()
         self.send_command(s)
-        if not self._write_ok_event.wait(timeout=1.0):  # 等待1秒超时
-            print("等待响应超时 Timeout waiting for response")
-
-    def factory_data_set(
-        self,
-        dis_voltage_offset,
-        set_voltage_offset,
-        dis_current_offset,
-        set_current_offset,
-        current_0a_offset,
-        lcd_panel_type,
-    ):
-        s = bytearray(58)
-        s[0] = Command.CMD_SYSTEM_FACTORY_DATA
-
-        s[1] = dis_voltage_offset[0] & 0xFF
-        s[2] = dis_voltage_offset[0] >> 8
-        s[3] = set_voltage_offset[0] & 0xFF
-        s[4] = set_voltage_offset[0] >> 8
-
-        s[5] = dis_voltage_offset[1] & 0xFF
-        s[6] = dis_voltage_offset[1] >> 8
-        s[7] = set_voltage_offset[1] & 0xFF
-        s[8] = set_voltage_offset[1] >> 8
-
-        s[9] = dis_voltage_offset[2] & 0xFF
-        s[10] = dis_voltage_offset[2] >> 8
-        s[11] = set_voltage_offset[2] & 0xFF
-        s[12] = set_voltage_offset[2] >> 8
-
-        s[13] = dis_voltage_offset[3] & 0xFF
-        s[14] = dis_voltage_offset[3] >> 8
-        s[15] = set_voltage_offset[3] & 0xFF
-        s[16] = set_voltage_offset[3] >> 8
-
-        s[17] = dis_voltage_offset[4] & 0xFF
-        s[18] = dis_voltage_offset[4] >> 8
-        s[19] = set_voltage_offset[4] & 0xFF
-        s[20] = set_voltage_offset[4] >> 8
-
-        s[21] = dis_voltage_offset[5] & 0xFF
-        s[22] = dis_voltage_offset[5] >> 8
-        s[23] = set_voltage_offset[5] & 0xFF
-        s[24] = set_voltage_offset[5] >> 8
-
-        s[25] = dis_current_offset[0] & 0xFF
-        s[26] = dis_current_offset[0] >> 8
-        s[27] = set_current_offset[0] & 0xFF
-        s[28] = set_current_offset[0] >> 8
-
-        s[29] = dis_current_offset[1] & 0xFF
-        s[30] = dis_current_offset[1] >> 8
-        s[31] = set_current_offset[1] & 0xFF
-        s[32] = set_current_offset[1] >> 8
-
-        s[33] = dis_current_offset[2] & 0xFF
-        s[34] = dis_current_offset[2] >> 8
-        s[35] = set_current_offset[2] & 0xFF
-        s[36] = set_current_offset[2] >> 8
-
-        s[37] = dis_current_offset[3] & 0xFF
-        s[38] = dis_current_offset[3] >> 8
-        s[39] = set_current_offset[3] & 0xFF
-        s[40] = set_current_offset[3] >> 8
-
-        s[41] = dis_current_offset[4] & 0xFF
-        s[42] = dis_current_offset[4] >> 8
-        s[43] = set_current_offset[4] & 0xFF
-        s[44] = set_current_offset[4] >> 8
-
-        s[45] = dis_current_offset[5] & 0xFF
-        s[46] = dis_current_offset[5] >> 8
-        s[47] = set_current_offset[5] & 0xFF
-        s[48] = set_current_offset[5] >> 8
-
-        s[49] = current_0a_offset[1] & 0xFF
-        s[50] = current_0a_offset[1] >> 8
-        s[51] = current_0a_offset[0] & 0xFF
-        s[52] = current_0a_offset[0] >> 8
-
-        s[53] = lcd_panel_type & 0xFF
-        s[54] = lcd_panel_type >> 8
-
-        s[55] = 0
-        s[56] = 0
-
-        # Add CRC if enabled
-        if self._use_crc8:
-            crc = self.calculate_crc8(s[:-1])
-            s[-1] = crc
-        else:
-            s[-1] = Command.CMD_END
-
-        self._write_ok_event.clear()
-        self.send_command(s)
-        if not self._write_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._write_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
 
     def factory_data_get(self):
+        """
+        读取出厂校准数据
+        Read factory calibration data
+        """
         s = bytearray(2)
         s[0] = Command.CMD_SYSTEM_FACTORY_DATA | Command.CMD_READ
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -564,7 +571,7 @@ class Com_PdPower:
 
         self._read_ok_event.clear()
         self.send_command(s)
-        if not self._read_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
             return None
         dis_voltage_offset = [
@@ -619,11 +626,15 @@ class Com_PdPower:
         )
 
     def output_discharge_enable(self, enable=True):
+        """
+        设置过压放电使能
+        Enable or disable over-voltage discharge
+        """
         s = bytearray(3)
         s[0] = Command.CMD_OUTPUT_DISCHARGE_EN
         s[1] = 0x01 if enable else 0x00
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -632,14 +643,18 @@ class Com_PdPower:
 
         self._write_ok_event.clear()
         self.send_command(s)
-        if not self._write_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._write_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
 
     def factory_reset(self):
+        """
+        恢复出厂设置
+        Restore factory defaults
+        """
         s = bytearray(2)
         s[0] = Command.CMD_SYSTEM_FACTORY_RESET
 
-        # Add CRC if enabled
+        # 启用校验时追加 CRC / Append CRC when enabled
         if self._use_crc8:
             crc = self.calculate_crc8(s[:-1])
             s[-1] = crc
@@ -648,8 +663,212 @@ class Com_PdPower:
 
         self._write_ok_event.clear()
         self.send_command(s)
-        if not self._write_ok_event.wait(timeout=1.0):  # 等待1秒超时
+        if not self._write_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
             print("等待响应超时 Timeout waiting for response")
+
+    # ---- 以下命令自固件 V1.3.0.0 起支持 ----
+    # ---- Commands below require firmware V1.3.0.0 or later ----
+
+    def _setting_set(self, cmd, value):
+        """
+        写入单个设置项
+        Write a single setting item
+        """
+        s = bytearray(3)
+        s[0] = cmd
+        s[1] = int(value) & 0xFF
+        if self._use_crc8:
+            s[-1] = self.calculate_crc8(s[:-1])
+        else:
+            s[-1] = Command.CMD_END
+
+        self._write_ok_event.clear()
+        self.send_command(s)
+        if not self._write_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
+            print("等待响应超时 Timeout waiting for response")
+
+    def _setting_get(self, cmd):
+        """
+        读取单个设置项
+        Read a single setting item
+        """
+        s = bytearray(2)
+        s[0] = cmd | Command.CMD_READ
+        if self._use_crc8:
+            s[-1] = self.calculate_crc8(s[:-1])
+        else:
+            s[-1] = Command.CMD_END
+
+        self._read_ok_event.clear()
+        self.send_command(s)
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
+            print("等待响应超时 Timeout waiting for response")
+            return None
+        # _read_result 已去掉命令码与帧尾，首字节即数据
+        return self._read_result[0]
+
+    def output_oc_discharge_enable(self, enable=True):
+        """
+        设置过流放电使能
+        Enable or disable over-current discharge
+        """
+        self._setting_set(Command.CMD_OUTPUT_OC_DISCHARGE_EN, 1 if enable else 0)
+
+    def output_oc_discharge_get(self):
+        """
+        读取过流放电使能
+        Read over-current discharge enable
+        """
+        return self._setting_get(Command.CMD_OUTPUT_OC_DISCHARGE_EN)
+
+    def output_auto_enable(self, enable=True):
+        """
+        设置上电自动输出使能
+        Enable or disable auto output on power-up
+        """
+        self._setting_set(Command.CMD_OUTPUT_AUTO_EN, 1 if enable else 0)
+
+    def output_auto_get(self):
+        """
+        读取上电自动输出使能
+        Read auto output enable
+        """
+        return self._setting_get(Command.CMD_OUTPUT_AUTO_EN)
+
+    def filter_window_size_set(self, size):
+        """
+        设置采样滤波窗口大小
+        Set the moving filter window size
+        """
+        # The frame carries one byte, so an out-of-range value would be truncated
+        # silently (300 becomes 44) instead of being rejected by the device.
+        # 一字节字段，越界值会被静默截断（300 变成 44），设备不会拒绝
+        if not 1 <= int(size) <= 200:
+            print(f"滤波窗口超出范围，已忽略 filter window out of range, ignored: {size}")
+            return
+        self._setting_set(Command.CMD_FILTER_WINDOW_SIZE, size)
+
+    def filter_window_size_get(self):
+        """
+        读取采样滤波窗口大小
+        Read the moving filter window size
+        """
+        return self._setting_get(Command.CMD_FILTER_WINDOW_SIZE)
+
+    def output_comp_enable(self, enable=True):
+        """
+        设置输出误差补偿使能
+        Enable or disable output error compensation
+        """
+        self._setting_set(Command.CMD_OUTPUT_COMP_EN, 1 if enable else 0)
+
+    def output_comp_get(self):
+        """
+        读取输出误差补偿使能
+        Read output error compensation enable
+        """
+        return self._setting_get(Command.CMD_OUTPUT_COMP_EN)
+
+    def timer_set(self, mode, enable_time, off_time):
+        """
+        设置定时开关
+        mode: 0 关闭, 1 启用（设备菜单对应项：Timer En:）
+        enable_time: 开启时间，秒，0-59999；0 表示不输出
+        off_time: 关闭时间，秒；0 表示开完即结束（定时关闭），非 0 则开-关循环
+        """
+        # Both times travel as 16-bit fields, so an out-of-range value would be
+        # truncated silently (70000 becomes 4464) instead of being rejected.
+        # 两个时间都是 16 位字段，越界值会被静默截断
+        # （70000 变成 4464），设备不会拒绝
+        if not 0 <= int(mode) <= 1:
+            print(f"定时模式超出范围，已忽略 timer mode out of range, ignored: {mode}")
+            return
+        if not 0 <= int(enable_time) <= 59999 or not 0 <= int(off_time) <= 59999:
+            print(f"定时时间超出范围，已忽略 timer time out of range, ignored: {enable_time}, {off_time}")
+            return
+
+        s = bytearray(7)
+        s[0] = Command.CMD_TIMER_SET
+        s[1] = int(mode) & 0xFF
+        s[2] = int(enable_time) & 0xFF
+        s[3] = (int(enable_time) >> 8) & 0xFF
+        s[4] = int(off_time) & 0xFF
+        s[5] = (int(off_time) >> 8) & 0xFF
+        s[6] = Command.CMD_END
+        if self._use_crc8:
+            s[-1] = self.calculate_crc8(s[:-1])
+
+        self._write_ok_event.clear()
+        self.send_command(s)
+        if not self._write_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
+            print("等待响应超时 Timeout waiting for response")
+
+    def timer_get(self):
+        """
+        返回 (mode, enable_time, off_time)
+        Returns (mode, enable_time, off_time)
+
+        mode 为定时功能是否启用，两个时间的单位为秒
+        mode: timer enabled or not, both times in seconds
+        """
+        s = bytearray(2)
+        s[0] = Command.CMD_TIMER_SET | Command.CMD_READ
+        if self._use_crc8:
+            s[-1] = self.calculate_crc8(s[:-1])
+        else:
+            s[-1] = Command.CMD_END
+
+        self._read_ok_event.clear()
+        self.send_command(s)
+        if not self._read_ok_event.wait(timeout=1.0):  # 等待回应，超时 1 秒 / Wait up to 1s for the reply
+            print("等待响应超时 Timeout waiting for response")
+            return None
+        r = self._read_result
+        return r[0], r[1] | (r[2] << 8), r[3] | (r[4] << 8)
+
+    # 各型号支持定时开关与新增设置项的最低版本
+    # Minimum firmware version per model for the timer and the new settings
+    MIN_VERSION = {
+        "V1": (1, 0, 3, 0),
+        "V1.1": (1, 0, 2, 0),
+    }
+
+    def model(self):
+        """按 WHO_AM_I 区分型号；V1.1 必须先判断，否则会被匹配成 V1"""
+        if self._model is None:
+            info = self.who_am_i() or ""
+            if "V1.1" in info:
+                self._model = "V1.1"
+            elif "V1" in info:
+                self._model = "V1"
+            else:
+                self._model = ""
+        return self._model or None
+
+    def version_tuple(self):
+        """解析 "V1.0.3.0_20261116"；固件头为擦除态时返回 None"""
+        text = (self.system_version() or "").strip()
+        if not text.startswith("V"):
+            return None
+        head = text[1:].split("_")[0]
+        try:
+            parts = [int(x) for x in head.split(".")]
+        except ValueError:
+            return None
+        if len(parts) != 4 or parts[0] == 255:
+            return None
+        return tuple(parts)
+
+    def supports_timer(self):
+        """
+        判断固件版本是否支持定时开关与新增设置项
+        Check whether the firmware version supports timer commands
+        """
+        version = self.version_tuple()
+        need = self.MIN_VERSION.get(self.model())
+        if version is None or need is None:
+            return False
+        return version >= need
 
     def close(self):
         """
@@ -665,11 +884,16 @@ class Com_PdPower:
             self.ser.close()
 
     def is_open(self):
+        """
+        串口是否已打开
+        Whether the serial port is open
+        """
         return self.ser.is_open
 
     @staticmethod
     def calculate_crc8(data):
         """
+        计算 CRC-8 校验值
         Calculate CRC-8 checksum using polynomial 0x31 (x^8 + x^5 + x^4 + 1)
         with initial value 0xFF and bit-by-bit processing algorithm
 
@@ -725,12 +949,24 @@ if __name__ == "__main__":
     print(f"system_version: {c.system_version()}")
     print(f"system_serial_num: {c.system_serial_num()}")
 
-    # PD Power Mini V1 software version >= v1.0.2.0, PD Power Mini V1.1 software version >= v1.0.1.0
+    # PD 电压设置要求 V1 >= v1.0.2.0，V1.1 >= v1.0.1.0
+    # input_pd_voltage_set requires V1 >= v1.0.2.0, V1.1 >= v1.0.1.0
     # print(f"input_state_get: {c.input_state_get()}")
     # print(f"input_pd_voltage_set: 10V")
     # c.input_pd_voltage_set(10)
 
     print(f"output_state: {c.output_state()}")
+
+    # 定时开关与新增设置项的最低版本：V1 为 v1.0.3.0，V1.1 为 v1.0.2.0
+    # Minimum version for timer and new settings: V1 v1.0.3.0, V1.1 v1.0.2.0
+    print(f"model: {c.model()}")
+    if c.supports_timer():
+        print("timer_set: mode=1, enable=5s, off=0s (one shot)")
+        c.timer_set(1, 5, 0)
+        print(f"timer_get: {c.timer_get()}")
+    else:
+        print("固件版本低于该型号的最低要求（V1: v1.0.3.0, V1.1: v1.0.2.0），跳过定时开关相关命令")
+        print("Firmware is older than the minimum for this model, skip timer commands")
 
     print(f"output_id_set: {0x00}")
     c.output_id_set(0x00)
@@ -754,7 +990,6 @@ if __name__ == "__main__":
     print(f"output_offset_enable: {False}")
     c.output_offset_enable(False)
 
-    # c.factory_data_set([1001,3001,5001,10001,15001,19001],[1000,3000,5000,10000,15000,19000],[51,351,751,1501,2501,3001],[50,350,750,1500,2500,3000],[1,3],0)
     print(f"factory_data_get: {c.factory_data_get()}")
     print(f"output_display_get: {c.output_display_get()}")
     print(f"factory_reset: {True}")

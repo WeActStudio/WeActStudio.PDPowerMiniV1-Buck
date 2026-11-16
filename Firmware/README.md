@@ -1,23 +1,55 @@
 > After upgrading, please manually restore the factory settings to ensure the device can continue to operate abnormally.
 
-## Setting Introduction
+# Firmware Upgrade Method
+## How to Upgrade on Windows
+1. Extract WeActStudio_Upgrade_Tool.7z
+2. Run WeActStudio_Upgrade_Tool.exe
+3. Connect the device using a data cable
+4. Select the fpk firmware
+5. Open the serial port
+6. Click the "Send" button to start the upgrade
+
+## How to Upgrade on Linux, macOS or Windows
+1. Extract WeActStudio_Upgrade_Tool_Python.zip
+2. Connect the device using a data cable
+3. Run WeActStudio_Upgrade_Tool.py, need to install pyserial library  
+Example: python WeActStudio_Upgrade_Tool.py firmware.fpk
+4. Wait for the upgrade to complete.
+
+## How to Upgrade via Browser, Chromium-based Browsers Supported
+1. Connect the device using a data cable
+2. Open a browser and visit https://tools.weactstudio.com/FirmwareUpdater/
+3. Follow the on-screen instructions
+
+# Setting Introduction
 1. `PD Vset` – PD Protocol Request Voltage: Adjustable from 8–24 V, 0.1 V step. Setting takes effect only when output is disabled. <small>(V1.0.1.0 and above)</small>
 2. `Brightness` – Brightness: Adjustable from 0–100%; 0–10% corresponds to ultra-low brightness.
 3. `Reverse Dis` – Reverse Display: 0 = Normal, 1 = 180° rotation. Setting takes effect after power cycle.
 4. `OCP Enable` – Over-Current Protection: 0 = Disabled, 1 = Enabled. Output shuts down after approximately 200 ms when current exceeds the set value.
 5. `OC Discharge` – Over-Current Discharge: 0 = Disabled, 1 = Enabled. <small>(V1.0.0.2 and above)</small>
 6. `AUTO OUT` – Auto Output: 0 = Disabled, 1 = Enabled. Output automatically enables after power-on.
-7. `Filter.Win` – Output Filter Window: Adjustable from 1–200, default value 50. <small>(V1.0.0.3 and above)</small>
-8. `Output Comp` – Output Compensation: 0 = Disabled, 1 = Enabled. <small>(V1.0.0.5 and above)</small>
-9. `UART Mode` – UART Mode: 0 = Disabled, 1 = Enabled. Setting takes effect after power cycle. <small>(V1.0.0.5 and above)</small>
-10. `UART Baudrate` – UART Baudrate: 0-6, respectively corresponding to 9600, 19200, 38400, 57600, 115200, 230400, 460800. <small>(V1.0.0.5 and above)</small>
-11. `Factory Reset` – Factory Reset: Set to 1 and exit the settings menu to restore factory defaults (calibration values will not be cleared).
-12. `Offset Enable` – Calibration Enable: 0 = Disabled, 1 = Enabled. Factory default is 1 (calibrated).
+7. `ON Time` – Output On Duration: 0:00–999:59 (mm:ss), default 0. Duration for which the output remains enabled. <small>(V1.0.3.0 and above)</small>
+8. `OFF Time` – Output Off Duration: 0:00–999:59 (mm:ss), default 0. Duration for which the output remains disabled. <small>(V1.0.3.0 and above)</small>
+9. `Timer En` – Timer Mode: 0 = Disabled, 1 = Enabled. When enabled, press ON to start the sequence and press ON again to stop it. The ON/OFF block turns yellow while the sequence is running. <small>(V1.0.3.0 and above)</small>
+10. `Filter.Win` – Output Filter Window: Adjustable from 1–200, default value 50. <small>(V1.0.0.3 and above)</small>
+11. `Output Comp` – Output Compensation: 0 = Disabled, 1 = Enabled. <small>(V1.0.0.5 and above)</small>
+12. `UART Mode` – UART Mode: 0 = Disabled, 1 = Enabled. Setting takes effect after power cycle. <small>(V1.0.0.5 and above)</small>
+13. `UART Baudrate` – UART Baudrate: 0-6, respectively corresponding to 9600, 19200, 38400, 57600, 115200, 230400, 460800. <small>(V1.0.0.5 and above)</small>
+14. `Factory Reset` – Factory Reset: Set to 1 and exit the settings menu to restore factory defaults (calibration values will not be cleared).
+15. `Offset Enable` – Calibration Enable: 0 = Disabled, 1 = Enabled. Factory default is 1 (calibrated).
+> A duration of 0 means the corresponding phase is not executed: an OFF Time of 0 ends the sequence after the On phase (one-shot), and an ON Time of 0 prevents the sequence from starting, in which case `ERR` is displayed. The remaining time is not shown on screen.
+
 > UART pins are assigned to DP and DM of Type‑C connector:
 DP → TX, DM → RX, 3.3 V logic level.  
 `Note`: The external UART chip must feature reverse-current protection (e.g., CH340K) to prevent power backfeeding and PDPowerMiniV1 startup failure when the UART side is powered up first.
 
-## Version History
+# Version History
+**V1.0.3.0**
+1. Add the timed output switch, which enables and disables the output according to the configured durations. An OFF Time of 0 runs the sequence once, a non-zero OFF Time repeats it in a loop.
+2. Add five communication commands, covering over-current discharge, auto output, filter window, output compensation and timer settings.
+3. Optimize the interface refresh rate.
+4. Fix several issues.
+
 **V1.0.2.0**
 1. Optimize QC protocol.
 2. Add input voltage reading and PD input voltage read/write functions to the communication protocol.
@@ -55,18 +87,3 @@ DP → TX, DM → RX, 3.3 V logic level.
 
 **V1.0.0.0**
 1. Initial version
-
-## How to Upgrade, Windows
-1. Extract WeActStudio_Upgrade_Tool.7z
-2. Run WeActStudio_Upgrade_Tool.exe
-3. Connect the device using a data cable
-4. Select the fpk firmware
-5. Open the serial port
-6. Click the "Send" button to start the upgrade
-
-## How to Upgrade, Linux , macOS or Windows
-1. Extract WeActStudio_Upgrade_Tool_Python.zip
-2. Connect the device using a data cable
-3. Run WeActStudio_Upgrade_Tool.py, need to install pyserial library  
-Example: python WeActStudio_Upgrade_Tool.py firmware.fpk
-4. Wait for the upgrade to complete.
