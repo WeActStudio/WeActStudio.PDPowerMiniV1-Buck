@@ -40,6 +40,9 @@
 ### 上位机说明
 ![display](Images/zh/4.png)
 
+网页工具：https://tools.weactstudio.com/PDPowerMini/
+本地版（Windows）：[Tools/](Tools/)
+
 ```
 /*---------------------------------------
 - WeAct Studio Official Link

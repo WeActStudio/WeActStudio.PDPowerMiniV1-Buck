@@ -41,6 +41,9 @@ DP → TX, DM → RX, 3.3 V logic level.
 ### Computer Software Introduction
 ![display](Images/en/4.png)
 
+Web tool: https://tools.weactstudio.com/PDPowerMini/
+Local version (Windows): [Tools/](Tools/)
+
 ```
 /*---------------------------------------
 - WeAct Studio Official Link
